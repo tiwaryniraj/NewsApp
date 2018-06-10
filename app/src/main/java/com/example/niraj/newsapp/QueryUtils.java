@@ -24,7 +24,11 @@ import static com.example.niraj.newsapp.NewsActivity.LOG_TAG;
 /**
  * Helper methods related to requesting and receiving News data from USGS.
  */
+
 public final class QueryUtils {
+
+    public static final int READ_TIMEOUT = 10000;
+    public static final int CONNECT_TIMEOUT = 15000;
 
     private static URL createUrl(String stringUrl) {
         URL url = null;
@@ -47,8 +51,8 @@ public final class QueryUtils {
         InputStream inputStream = null;
         try {
             urlConnection = (HttpURLConnection) url.openConnection();
-            urlConnection.setReadTimeout(10000 /* milliseconds */);
-            urlConnection.setConnectTimeout(15000 /* milliseconds */);
+            urlConnection.setReadTimeout(READ_TIMEOUT /* milliseconds */);
+            urlConnection.setConnectTimeout(CONNECT_TIMEOUT /* milliseconds */);
             urlConnection.setRequestMethod("GET");
             urlConnection.connect();
 
@@ -137,11 +141,13 @@ public final class QueryUtils {
                 String title = currentNews.getString("webTitle");
 
                 String author = "(unknown author)";
-                if (currentNews.has("fields")) {
-                    JSONObject fieldsObject = currentNews.getJSONObject("fields");
+                if (currentNews.has("tags")) {
+                    JSONArray contributorArray = currentNews.getJSONArray("tags");
 
-                    if (fieldsObject.has("byline")) {
-                        author = fieldsObject.getString("byline");
+                    JSONObject contributor = contributorArray.getJSONObject(0);
+
+                    if (contributor.has("webTitle")) {
+                        author = contributor.getString("webTitle");
                     }
                 }
 
@@ -186,9 +192,6 @@ public final class QueryUtils {
         }
 
         // Extract relevant fields from the JSON response and create a list of {@link News}s
-        List<News> news = extractFeatureFromJson(jsonResponse);
-
-        // Return the list of {@link News}s
-        return news;
+        return extractFeatureFromJson(jsonResponse);
     }
 }
