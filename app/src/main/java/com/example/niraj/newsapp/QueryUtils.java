@@ -136,6 +136,15 @@ public final class QueryUtils {
                 // Extract the value for the key called "webTitle"
                 String title = currentNews.getString("webTitle");
 
+                String author = "(unknown author)";
+                if (currentNews.has("fields")) {
+                    JSONObject fieldsObject = currentNews.getJSONObject("fields");
+
+                    if (fieldsObject.has("byline")) {
+                        author = fieldsObject.getString("byline");
+                    }
+                }
+
                 // Extract the value for the key called "sectionName"
                 String section = currentNews.getString("sectionName");
 
@@ -147,7 +156,7 @@ public final class QueryUtils {
 
                 // Create a new {@link News} object with the title, section, time,
                 // and url from the JSON response.
-                News news = new News(title, section, time, url);
+                News news = new News(title, section,author, time, url);
 
                 // Add the new {@link News} to the list of News.
                 newsList.add(news);
