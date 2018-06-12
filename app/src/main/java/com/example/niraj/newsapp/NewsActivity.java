@@ -4,11 +4,15 @@ import android.app.LoaderManager;
 import android.content.Context;
 import android.content.Intent;
 import android.content.Loader;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
@@ -23,7 +27,7 @@ public class NewsActivity extends AppCompatActivity implements LoaderManager.Loa
      * URL for News data from the The Guardian
      */
     private static final String Guardian_REQUEST_URL =
-            "https://content.guardianapis.com/search?api-key=424fd901-b046-406b-9b03-061cb142f72e&show-tags=contributor";
+            "https://content.guardianapis.com/search?q=";
 
     public static final String LOG_TAG = NewsActivity.class.getName();
 
@@ -99,7 +103,28 @@ public class NewsActivity extends AppCompatActivity implements LoaderManager.Loa
 
     @Override
     public Loader<List<News>> onCreateLoader(int i, Bundle bundle) {
-        return new NewsLoader(this, Guardian_REQUEST_URL);
+        /*
+        Create an instance object of SharedPreferences File for retrieving actual key-value pair,
+        storing the value in a string, and appending the value to the search query of the GUARDIAN URL
+        */
+        SharedPreferences sharedPrefs = PreferenceManager.getDefaultSharedPreferences(this);
+
+        //Retrieves the category key from sharedPrefs instance.
+        String category= sharedPrefs.getString(
+                getString(R.string.settings_category_key), getString(R.string.settings_category_default));
+
+        //Retrieves the order-by key from sharedPrefs instance.
+        String orderBy = sharedPrefs.getString(
+                getString(R.string.settings_order_by_key), getString(R.string.settings_order_by_default)) ;
+
+        Uri baseUri = Uri.parse(Guardian_REQUEST_URL);
+        Uri.Builder uriBuilder = baseUri.buildUpon();
+        uriBuilder.appendQueryParameter("", category);
+        uriBuilder.appendQueryParameter("order-by", orderBy);
+        uriBuilder.appendQueryParameter("api-key", "test");
+        uriBuilder.appendQueryParameter("show-tags","contributor");
+
+        return new NewsLoader(this, uriBuilder.toString().replace("&=",""));
     }
 
     @Override
@@ -119,6 +144,25 @@ public class NewsActivity extends AppCompatActivity implements LoaderManager.Loa
         if (news != null && !news.isEmpty()) {
             mAdapter.addAll(news);
         }
+    }
+
+    @Override
+    // This method initialize the contents of the Activity's options menu.
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the Options Menu we specified in XML
+        getMenuInflater().inflate(R.menu.main, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == R.id.action_settings) {
+            Intent settingsIntent = new Intent(this, SettingsActivity.class);
+            startActivity(settingsIntent);
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
     }
 
     @Override
